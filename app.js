@@ -1,8 +1,8 @@
 /**
  * Nepal License Plate Visualizer (app.js)
  * Simple, image-focused visualizer that converts Latin Nepal plate numbers into:
- * 1. A prominent image of the last 4 digits in Nepali (Devanagari) characters
- * 2. Full 1-line (front) and 2-line (back) plate images with short captions underneath
+ * 1. The last 4 digits in Nepali (Devanagari) characters
+ * 2. Full 1-line (front) and 2-line (back) plate visuals with short captions underneath
  * 3. An optional "Show Details" section explaining character transformation and plate rules
  *
  * Security Notes (Mandatory Secure Web Skills):
@@ -109,49 +109,13 @@
     SA: 'स', SE: 'से', HA: 'ह', KO: 'को', ME: 'मे', PRA: 'प्र', PRADESH: 'प्रदेश'
   };
 
-  const PLATE_THEMES = {
-    private: {
-      bg: '#c41e1e',
-      bgGradientTop: '#d62828',
-      bgGradientBottom: '#a91616',
-      text: '#ffffff',
-      border: '#ffffff'
-    },
-    commercial: {
-      bg: '#16181b',
-      bgGradientTop: '#24272c',
-      bgGradientBottom: '#0d0f12',
-      text: '#ffffff',
-      border: '#ffffff'
-    },
-    tourist: {
-      bg: '#146c43',
-      bgGradientTop: '#198754',
-      bgGradientBottom: '#0f5132',
-      text: '#ffffff',
-      border: '#ffffff'
-    },
-    government: {
-      bg: '#f8fafc',
-      bgGradientTop: '#ffffff',
-      bgGradientBottom: '#e2e8f0',
-      text: '#c41e1e',
-      border: '#c41e1e'
-    },
-    corporation: {
-      bg: '#eab308',
-      bgGradientTop: '#facc15',
-      bgGradientBottom: '#ca8a04',
-      text: '#111827',
-      border: '#111827'
-    },
-    diplomatic: {
-      bg: '#1d4ed8',
-      bgGradientTop: '#2563eb',
-      bgGradientBottom: '#1e40af',
-      text: '#ffffff',
-      border: '#ffffff'
-    }
+  const VALID_THEMES = {
+    private: true,
+    commercial: true,
+    tourist: true,
+    government: true,
+    corporation: true,
+    diplomatic: true
   };
 
   const state = {
@@ -326,122 +290,58 @@
     };
   }
 
-  function drawRoundedRect(ctx, x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-  }
-
-  function drawBolt(ctx, cx, cy, radius) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy + 1.5, radius + 1, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.fill();
-
-    const grad = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, radius);
-    grad.addColorStop(0, '#f8fafc');
-    grad.addColorStop(0.6, '#94a3b8');
-    grad.addColorStop(1, '#475569');
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function renderPlateCanvas(canvas, options) {
-    const width = options.width;
-    const height = options.height;
+  /**
+   * Build a realistic plate graphic using native DOM elements + CSS Flexbox
+   * so Devanagari ligatures and centering render accurately on iOS Chrome/Safari and Desktop.
+   */
+  function createPlateElement(options) {
     const lines = options.lines;
-    const theme = options.theme;
-    const showBolts = options.showBolts !== false;
+    const themeKey = VALID_THEMES[options.themeKey] ? options.themeKey : 'private';
+    const isSingleLine = lines.length === 1;
 
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
+    const plate = document.createElement('div');
+    plate.className = 'plate-graphic ' +
+      (isSingleLine ? 'plate-1line ' : 'plate-2line ') +
+      'plate-theme-' + themeKey;
+    plate.setAttribute('role', 'img');
+    plate.setAttribute('aria-label', options.caption + ': ' + lines.join(' '));
 
-    const pad = 6;
-    const plateW = width - pad * 2;
-    const plateH = height - pad * 2;
-    const cornerRadius = 16;
+    const rim = document.createElement('div');
+    rim.className = 'plate-inner-rim';
+    plate.appendChild(rim);
 
-    // Plate background
-    ctx.save();
-    drawRoundedRect(ctx, pad, pad, plateW, plateH, cornerRadius);
-    const bgGrad = ctx.createLinearGradient(0, pad, 0, pad + plateH);
-    bgGrad.addColorStop(0, theme.bgGradientTop);
-    bgGrad.addColorStop(0.5, theme.bg);
-    bgGrad.addColorStop(1, theme.bgGradientBottom);
-    ctx.fillStyle = bgGrad;
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.stroke();
-    ctx.restore();
+    const boltLeft = document.createElement('span');
+    boltLeft.className = 'plate-bolt bolt-left';
+    plate.appendChild(boltLeft);
 
-    // Inner border
-    const inset = 14;
-    ctx.save();
-    drawRoundedRect(ctx, pad + inset, pad + inset, plateW - inset * 2, plateH - inset * 2, cornerRadius - 4);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = theme.border;
-    ctx.globalAlpha = 0.92;
-    ctx.stroke();
-    ctx.restore();
+    const boltRight = document.createElement('span');
+    boltRight.className = 'plate-bolt bolt-right';
+    plate.appendChild(boltRight);
 
-    // Bolts
-    if (showBolts) {
-      if (lines.length === 1) {
-        drawBolt(ctx, pad + 34, height / 2, 7);
-        drawBolt(ctx, width - pad - 34, height / 2, 7);
-      } else {
-        drawBolt(ctx, pad + 40, pad + 34, 7);
-        drawBolt(ctx, width - pad - 40, pad + 34, 7);
-      }
-    }
-
-    const fontFamily = '"Kohinoor Devanagari", "Noto Sans Devanagari", "Mukta", "Mangal", "Arial Unicode MS", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const maxTextW = plateW - (showBolts && lines.length === 1 ? 110 : 64);
-
-    function drawFittedLine(text, cx, cy, startSize) {
-      ctx.save();
-      let size = startSize;
-      ctx.font = '800 ' + size + 'px ' + fontFamily;
-      while (ctx.measureText(text).width > maxTextW && size > 26) {
-        size -= 2;
-        ctx.font = '800 ' + size + 'px ' + fontFamily;
-      }
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillText(text, cx + 2, cy + 3);
-      ctx.fillStyle = theme.text;
-      ctx.fillText(text, cx, cy);
-      ctx.restore();
-    }
-
-    if (lines.length === 1) {
-      drawFittedLine(lines[0], width / 2, height / 2 + 4, options.fontSize || 94);
+    if (isSingleLine) {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'plate-line plate-line-single' + (lines[0].length > 12 ? ' plate-line-long' : '');
+      lineEl.textContent = lines[0];
+      plate.appendChild(lineEl);
     } else {
-      drawFittedLine(lines[0], width / 2, height * 0.34, 86);
-      drawFittedLine(lines[1], width / 2, height * 0.71, 108);
+      const topEl = document.createElement('div');
+      topEl.className = 'plate-line plate-line-top' + (lines[0].length > 9 ? ' plate-line-long' : '');
+      topEl.textContent = lines[0];
+
+      const bottomEl = document.createElement('div');
+      bottomEl.className = 'plate-line plate-line-bottom';
+      bottomEl.textContent = lines[1];
+
+      plate.appendChild(topEl);
+      plate.appendChild(bottomEl);
     }
+
+    return plate;
   }
 
   function renderApp() {
     const parsed = parsePlateInput(state.rawInput);
     const effectiveType = state.selectedType === 'auto' ? parsed.detectedType : state.selectedType;
-    const activeTheme = PLATE_THEMES[effectiveType] || PLATE_THEMES.private;
 
     // 1. Render Last 4 Digits in Nepali Language (not in a plate)
     const digitsDisplay = document.getElementById('last-digits-display');
@@ -453,7 +353,7 @@
       digitsCaption.textContent = parsed.lastDigitsLatin + ' → ' + parsed.lastDigitsDeva;
     }
 
-    // 2. Render Full Plate Images with Short Captions Underneath
+    // 2. Render Full Plate Graphics with Short Captions Underneath
     const galleryEl = document.getElementById('plates-gallery');
     if (galleryEl) {
       galleryEl.replaceChildren();
@@ -461,27 +361,17 @@
       const plates = [
         {
           caption: 'Front Plate (1-Line)',
-          className: 'plate-canvas plate-canvas-1line',
-          width: 800,
-          height: 195,
           lines: [parsed.singleLine]
         },
         {
           caption: 'Back Plate (2-Line)',
-          className: 'plate-canvas plate-canvas-2line',
-          width: 540,
-          height: 330,
           lines: [parsed.line1Standard, parsed.line2Standard]
         }
       ];
 
-      // Include alternative 2-line split if it differs from standard 2-line
       if (parsed.line1Split !== parsed.line1Standard) {
         plates.push({
           caption: 'Back Plate (Alternative 2-Line)',
-          className: 'plate-canvas plate-canvas-2line',
-          width: 540,
-          height: 330,
           lines: [parsed.line1Split, parsed.line2Split]
         });
       }
@@ -490,23 +380,17 @@
         const item = document.createElement('div');
         item.className = 'plate-item';
 
-        const canvas = document.createElement('canvas');
-        canvas.className = spec.className;
-        canvas.setAttribute('aria-label', spec.caption);
-
-        renderPlateCanvas(canvas, {
-          width: spec.width,
-          height: spec.height,
+        const plateEl = createPlateElement({
+          caption: spec.caption,
           lines: spec.lines,
-          theme: activeTheme,
-          showBolts: true
+          themeKey: effectiveType
         });
 
         const caption = document.createElement('p');
         caption.className = 'image-caption';
         caption.textContent = spec.caption;
 
-        item.appendChild(canvas);
+        item.appendChild(plateEl);
         item.appendChild(caption);
         galleryEl.appendChild(item);
       });
