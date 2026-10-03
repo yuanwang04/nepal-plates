@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none';">
+  <title>Nepal Car Plate Visualizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <!-- Section 1: Title, Description & Input Box -->
+    <section class="section-card hero-section" aria-label="Enter Plate Number">
+      <div class="hero-header">
+        <h1>Nepal Car Plate Visualizer</h1>
+        <p class="hero-subtitle">Having trouble finding your ride in Nepal? Enter your car plate below and see what it looks like.</p>
+      </div>
+
+      <div class="input-box-wrap">
+        <input
+          type="text"
+          id="plate-input"
+          class="plate-input"
+          value="BA 2 CHA 1234"
+          maxlength="50"
+          placeholder="e.g. BA 2 CHA 1234"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Enter Latin plate number"
+        >
+        <button type="button" id="clear-btn" class="clear-btn" title="Clear" aria-label="Clear input">✕</button>
+      </div>
+      <p id="input-error" class="input-error hidden" role="alert"></p>
+
+      <div class="type-switch" role="radiogroup" aria-label="Plate Type">
+        <button type="button" class="switch-btn active" data-type="auto" role="radio" aria-checked="true">
+          Auto
+        </button>
+        <button type="button" class="switch-btn" data-type="private" role="radio" aria-checked="false">
+          <span class="dot dot-private"></span>Private
+        </button>
+        <button type="button" class="switch-btn" data-type="commercial" role="radio" aria-checked="false">
+          <span class="dot dot-commercial"></span>Commercial / Taxi
+        </button>
+        <button type="button" class="switch-btn" data-type="tourist" role="radio" aria-checked="false">
+          <span class="dot dot-tourist"></span>Tourist
+        </button>
+      </div>
+    </section>
+
+    <!-- Section 2: Last 4 Digits in Nepal Language -->
+    <section class="section-card digits-section" aria-label="Last 4 digits in Nepali">
+      <span class="section-label">Last 4 Digits in Nepali</span>
+      <div id="last-digits-display" class="last-digits-display" aria-live="polite">१२३४</div>
+      <p id="last-digits-caption" class="image-caption">1234 → १२३४</p>
+    </section>
+
+    <!-- Section 3: Plates (Images) -->
+    <section class="section-card plates-section" aria-label="Generated License Plate Images">
+      <span class="section-label">Plates</span>
+      <div id="plates-gallery" class="plates-showcase">
+        <!-- Populated with Canvas plate images + short captions underneath -->
+      </div>
+    </section>
+
+    <!-- Section 4: Details (Hidden by default) -->
+    <div class="details-toggle-wrap">
+      <button type="button" id="toggle-details-btn" class="details-btn" aria-expanded="false" aria-controls="details-panel">
+        Show Details
+      </button>
+    </div>
+
+    <section id="details-panel" class="section-card details-panel hidden" aria-label="Plate formation details">
+      <div class="details-block">
+        <h2>Character Transformation</h2>
+        <div id="tokens-container" class="tokens-grid"></div>
+      </div>
+
+      <div class="details-block">
+        <h2>How Nepal Plates Are Formed</h2>
+        <p class="details-text">
+          Traditional Nepal plates follow the <strong>Zone + Lot # + Category + 4 Digits</strong> format (e.g. <code>BA 2 CHA 1234</code> → <strong>बा २ च १२३४</strong>).
+        </p>
+
+        <h3>Nepali Numerals (0–9)</h3>
+        <div id="ref-numerals-grid" class="numerals-row"></div>
+
+        <h3>Vehicle Category &amp; Plate Color</h3>
+        <div class="table-wrap">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>Type (Color)</th>
+                <th>Car / Van (Light)</th>
+                <th>Bike / Scooter</th>
+                <th>Bus / Truck (Heavy)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-private">Private (Red)</span></td>
+                <td><strong>च</strong> (CHA / CA)</td>
+                <td><strong>प</strong> (PA)</td>
+                <td><strong>क</strong> (KA)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-commercial">Commercial / Taxi (Black)</span></td>
+                <td><strong>ज</strong> (JA)</td>
+                <td><strong>फ</strong> (PHA / FA)</td>
+                <td><strong>ख</strong> (KHA)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-tourist">Tourist (Green)</span></td>
+                <td><strong>य</strong> (YA)</td>
+                <td><strong>य</strong> (YA)</td>
+                <td><strong>य</strong> (YA)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-gov">Government (White/Red)</span></td>
+                <td><strong>झ</strong> (JHA)</td>
+                <td><strong>ब</strong> (BA)</td>
+                <td><strong>ग</strong> (GA)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Zone Codes (First Character)</h3>
+        <div id="ref-zones-grid" class="zones-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
