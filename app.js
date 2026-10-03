@@ -211,11 +211,9 @@
         detectedType: catInfo.plateType,
         lastDigitsLatin: serialLatin,
         lastDigitsDeva: serialDeva,
-        singleLine: zoneInfo.deva + ' ' + lotDeva + ' ' + catInfo.deva + ' ' + serialDeva,
-        line1Standard: zoneInfo.deva + ' ' + lotDeva + ' ' + catInfo.deva,
+        singleLine: zoneInfo.deva + lotDeva + catInfo.deva + serialDeva,
+        line1Standard: zoneInfo.deva + lotDeva + catInfo.deva,
         line2Standard: serialDeva,
-        line1Split: zoneInfo.deva + ' ' + lotDeva,
-        line2Split: catInfo.deva + ' ' + serialDeva,
         breakdownTokens: [
           { role: 'Zone', latin: tokens[0], deva: zoneInfo.deva, meaning: zoneInfo.name },
           { role: 'Lot #', latin: lotLatin, deva: lotDeva, meaning: 'Batch number' },
@@ -266,11 +264,9 @@
       }
     }
 
-    const singleLine = devaParts.join(' ');
+    const singleLine = devaParts.join('');
     const lastPart = devaParts[devaParts.length - 1] || '';
-    const topParts = devaParts.length > 1 ? devaParts.slice(0, -1).join(' ') : singleLine;
-    const splitTop = devaParts.length > 2 ? devaParts.slice(0, -2).join(' ') : topParts;
-    const splitBottom = devaParts.length > 2 ? devaParts.slice(-2).join(' ') : lastPart;
+    const topParts = devaParts.length > 1 ? devaParts.slice(0, -1).join('') : singleLine;
 
     if (!lastDigitsDeva) {
       lastDigitsLatin = tokens[tokens.length - 1];
@@ -284,15 +280,13 @@
       singleLine: singleLine,
       line1Standard: topParts,
       line2Standard: lastPart,
-      line1Split: splitTop,
-      line2Split: splitBottom,
       breakdownTokens: breakdownTokens
     };
   }
 
   /**
-   * Build a realistic plate graphic using native DOM elements + CSS Flexbox
-   * so Devanagari ligatures and centering render accurately on iOS Chrome/Safari and Desktop.
+   * Build a Wikipedia-style Nepal license plate graphic using native DOM elements + CSS
+   * with large characters tightly filling the plate.
    */
   function createPlateElement(options) {
     const lines = options.lines;
@@ -306,26 +300,14 @@
     plate.setAttribute('role', 'img');
     plate.setAttribute('aria-label', options.caption + ': ' + lines.join(' '));
 
-    const rim = document.createElement('div');
-    rim.className = 'plate-inner-rim';
-    plate.appendChild(rim);
-
-    const boltLeft = document.createElement('span');
-    boltLeft.className = 'plate-bolt bolt-left';
-    plate.appendChild(boltLeft);
-
-    const boltRight = document.createElement('span');
-    boltRight.className = 'plate-bolt bolt-right';
-    plate.appendChild(boltRight);
-
     if (isSingleLine) {
       const lineEl = document.createElement('div');
-      lineEl.className = 'plate-line plate-line-single' + (lines[0].length > 12 ? ' plate-line-long' : '');
+      lineEl.className = 'plate-line plate-line-single' + (lines[0].length > 10 ? ' plate-line-long' : '');
       lineEl.textContent = lines[0];
       plate.appendChild(lineEl);
     } else {
       const topEl = document.createElement('div');
-      topEl.className = 'plate-line plate-line-top' + (lines[0].length > 9 ? ' plate-line-long' : '');
+      topEl.className = 'plate-line plate-line-top' + (lines[0].length > 7 ? ' plate-line-long' : '');
       topEl.textContent = lines[0];
 
       const bottomEl = document.createElement('div');
@@ -368,13 +350,6 @@
           lines: [parsed.line1Standard, parsed.line2Standard]
         }
       ];
-
-      if (parsed.line1Split !== parsed.line1Standard) {
-        plates.push({
-          caption: 'Back Plate (Alternative 2-Line)',
-          lines: [parsed.line1Split, parsed.line2Split]
-        });
-      }
 
       plates.forEach(function (spec) {
         const item = document.createElement('div');
